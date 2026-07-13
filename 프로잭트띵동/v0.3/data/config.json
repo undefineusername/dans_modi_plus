@@ -1,0 +1,9 @@
+{
+    "robot_name": "MODI",
+
+    "tts_enable": true,
+
+    "effect_enable": true,
+
+    "default_mood": 50
+}
