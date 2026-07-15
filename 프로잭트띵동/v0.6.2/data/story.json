@@ -1,0 +1,16 @@
+{
+    "active_story": {
+        "title": "일상",
+        "goal": "일상 대화 및 친밀감 쌓기",
+        "completion": 40,
+        "missing": [
+            "L의 좋아하는 애의 이름",
+            "L의 좋아하는 애와의 관계",
+            "L의 학교 생활"
+        ]
+    },
+    "story_stack": [],
+    "open_loops": [],
+    "current_topic": "일상",
+    "topic_history": []
+}
