@@ -1,0 +1,77 @@
+[
+    {
+        "id": "person_1",
+        "type": "person",
+        "summary": "당신은 단이로 이름이 있고 중 3학년입니다.",
+        "importance": 99,
+        "keywords": [
+            "단이",
+            "중 3"
+        ]
+    },
+    {
+        "id": "hobby_d",
+        "type": "hobby",
+        "summary": "단이는 MODI+키트로 재미있는 활동을 하고 있다.",
+        "importance": 80,
+        "keywords": [
+            "MODI+키트",
+            "재미있는 활동"
+        ]
+    },
+    {
+        "id": "present",
+        "type": "taste",
+        "summary": "교육청에서 준 재밌는 선물",
+        "importance": 80,
+        "keywords": [
+            "선물",
+            "재미"
+        ]
+    },
+    {
+        "id": "person_y",
+        "type": "person",
+        "summary": "단이는 짝사랑하는 애를 볼 수 있었음.",
+        "importance": 80,
+        "keywords": [
+            "짝사랑",
+            "친구"
+        ]
+    },
+    {
+        "id": "person_그녀",
+        "category": "person",
+        "entity_name": "그녀",
+        "summary": "단이, 단이의 마음, 단이와 그녀의 추억",
+        "importance": 90,
+        "keywords": [
+            "추억",
+            "나치고",
+            "노력많이하고있어",
+            "요즘",
+            "운동도하고",
+            "단이,",
+            "그녀",
+            "마음,",
+            "단이"
+        ]
+    },
+    {
+        "id": "person_김해솔",
+        "category": "person",
+        "entity_name": "김해솔",
+        "summary": "1학년 때 강유주와 사귄 경험이 있음",
+        "importance": 50,
+        "keywords": [
+            "해솔",
+            "남자라고",
+            "강유주",
+            "때",
+            "있음",
+            "경험",
+            "사귄",
+            "1학년"
+        ]
+    }
+]
