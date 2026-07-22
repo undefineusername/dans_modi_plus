@@ -1,4 +1,4 @@
-# Dan's MODI+ (dans_modi_plus)
+# Dan's MODI+
 
 MODI+ 하드웨어 모듈을 기반으로 사용자의 감정 상태를 감지·기록하고, LLM과 연동해 개인화된 반응을 생성하는 스마트 디바이스 프로젝트.
 
