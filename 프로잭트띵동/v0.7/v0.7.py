@@ -2,15 +2,16 @@ import time
 import os
 import json
 import random
+from datetime import datetime
 import modi_plus
 from gtts import gTTS
 import pygame
 
-refresh_time = 10
+# AI 모듈 불러오기
+from ai import AIChatSession
 
-# ==========================================
-# JSON 대사 데이터 로드 함수
-# ==========================================
+refresh_time = 200
+
 def load_dialogue():
     fallback = {
         "bother_ments": ["저기요?", "계세요?", "거기 누구 없나요?", "일로 와보세요.", "심심해요."],
@@ -34,9 +35,6 @@ def load_dialogue():
 
 dialogue = load_dialogue()
 
-# ==========================================
-# 통합 출력 및 TTS 함수 (개선 완료)
-# ==========================================
 def announce(hw, text, is_tts=True):
     print(f"\n[MindMODI] {text}")
     if hw["display"]:
@@ -45,12 +43,9 @@ def announce(hw, text, is_tts=True):
     if is_tts:
         try:
             tts = gTTS(text=text, lang='ko', slow=False) 
-            
-            # 개선 ②: 타임스탬프를 이용해 고유한 파일명 생성 (충돌 방지)
             filename = f"temp_{int(time.time() * 1000)}.mp3"
             tts.save(filename)
             
-            # 개선 ①: 오디오 로드 및 재생만 수행 (init/quit 제거로 속도 향상)
             pygame.mixer.music.load(filename)
             pygame.mixer.music.play()
             while pygame.mixer.music.get_busy(): 
@@ -73,10 +68,9 @@ def play_beep_three_times(hw):
 def connect_modules():
     print("Connecting...")
     bundle = modi_plus.MODIPlus()
-    
-
+    time.sleep(2)
     return {
-        "speaker": bundle.speakers[0] if bundle.speakers else None,
+        "speaker": bundle.sdpeakers[0] if bundle.speakers else None,
         "display": bundle.displays[0] if bundle.displays else None,
         "led": bundle.leds[0] if bundle.leds else None,
         "button": bundle.buttons[0] if bundle.buttons else None,
@@ -85,9 +79,6 @@ def connect_modules():
         "imu": bundle.imus[0] if bundle.imus else None,
     }
 
-# ==========================================
-# 시스템 루프 구조
-# ==========================================
 def startup(hw):
     if hw["led"]: hw["led"].rgb = (0, 0, 255)  
     play_beep_three_times(hw)
@@ -96,10 +87,9 @@ def startup(hw):
     announce(hw, start_ment)
     time.sleep(1)
 
-# 개선 ③: IMU 3회 연속 감지 로직 적용
 def wait_motion_with_bother(hw):
     if not hw["imu"]: return
-    if hw["display"]: hw["display"].text = "대기  중..."
+    if hw["display"]: hw["display"].text = "대기 중..."
     if hw["led"]: hw["led"].rgb = (0, 0, 255)  
 
     last_bother_time = time.time()
@@ -109,7 +99,6 @@ def wait_motion_with_bother(hw):
         movement = abs(hw["imu"].angular_vel_x) + abs(hw["imu"].angular_vel_y) + abs(hw["imu"].angular_vel_z)
         print(f"Movement : {movement:.1f} (Count: {motion_count})      ", end="\r")
 
-        # 3번 연속 감지 체크
         if movement > 5:   
             motion_count += 1
         else:
@@ -121,17 +110,15 @@ def wait_motion_with_bother(hw):
             announce(hw, come_closer_ment)
             return
 
-        # 4초 동안 반응 없으면 시비 걸기
         if time.time() - last_bother_time > 4.0:
             bother_ment = random.choice(dialogue["bother_ments"])
             announce(hw, bother_ment)
-            if hw["display"]: hw["display"].text = "대기  중..."
+            if hw["display"]: hw["display"].text = "대기 중..."
             last_bother_time = time.time()
-            motion_count = 0 # 멘트 도중 움직임 카운트 리셋
+            motion_count = 0
 
         time.sleep(0.05)
 
-# 개선 ④: ToF 3회 연속 감지 로직 적용
 def wait_user(hw):
     if not hw["tof"]: return
     print("Waiting user...")
@@ -140,7 +127,6 @@ def wait_user(hw):
     while True:
         distance = hw["tof"].distance
         
-        # 3번 연속 2cm ~ 30cm 사이 유지 체크
         if 2 < distance < 30:
             tof_count += 1
         else:
@@ -155,10 +141,10 @@ def wait_user(hw):
 
 def input_mood(hw):
     if not hw["dial"] or not hw["button"]: return 0
-    if hw["display"]: hw["display"].text = "오늘의    기분은?"
+    if hw["display"]: hw["display"].text = "오늘의 기분은?"
     while True:
         mood = min(int(hw["dial"].turn), 100)
-        score_text = f"현재  점수 :  {mood}"
+        score_text = f"현재 점수 : {mood}"
         print(f"[MindMODI] {score_text}      ", end="\r")
         if hw["display"]: hw["display"].text = score_text
         if hw["led"]: hw["led"].rgb = (255, 0, 0)  
@@ -181,10 +167,45 @@ def save_mood(hw, mood):
     time.sleep(1)
 
 # ==========================================
+# AI 대화 루프 연동 함수
+# ==========================================
+def run_ai_conversation(hw, mood):
+    """기분 입력 후 AI와의 대화를 진행하는 함수"""
+    ai_session = AIChatSession()
+    
+    # 1. 확장 가능한 Context 생성
+    context = {
+        "mood": mood,
+        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        # 필요 시 센서 데이터 추가 가능 (예: "temperature": hw["env"].temperature)
+    }
+    
+    system_prompt = ai_session.start_session(context)
+    
+    # 2. 첫 AI 안내 멘트 출력 (선택 사항)
+    initial_prompt = f"오늘 기분 점수가 {mood}점이구나! 무슨 일 있었어?"
+    announce(hw, initial_prompt)
+
+    # 3. 콘솔 대화 루프 (종료 시 'exit' 입력)
+    while True:
+        try:
+            user_input = input("\n[사용자 입력 (종료: exit)] : ").strip()
+            
+            if not user_input or user_input.lower() in ["exit", "종료", "끝"]:
+                announce(hw, "대화를 종료할게. 오늘 하루도 수고했어!")
+                break
+                
+            # AI 답변 생성 및 출력 (TTS 포함)
+            response = ai_session.chat(user_input, system_prompt)
+            announce(hw, response)
+            
+        except KeyboardInterrupt:
+            break
+
+# ==========================================
 # Main
 # ==========================================
 def main():
-    # 개선 ①: 프로그램 시작 시 단 한 번만 pygame mixer 초기화
     pygame.mixer.init()
     
     hw = connect_modules()
@@ -196,13 +217,17 @@ def main():
             mood = input_mood(hw)        
             save_mood(hw, mood)   
             
+            # --- AI 상담 시작 ---
+            run_ai_conversation(hw, mood)
+            # --------------------
+            
             if hw["speaker"]: hw["speaker"].reset()
             
             print("") 
             for i in range(refresh_time, 0, -1):
                 countdown_text = f"{i}초 뒤 재시작"
                 print(f"[MindMODI] {countdown_text}      ", end="\r")
-                if hw["display"]: hw["display"].text = f"{i}초  뒤  재시작"
+                if hw["display"]: hw["display"].text = f"{i}초 뒤 재시작"
                 time.sleep(1)
             print("") 
                 
@@ -213,7 +238,6 @@ def main():
         if hw["display"]: hw["display"].reset()
         if hw["led"]: hw["led"].turn_off()
     finally:
-        # 개선 ①: 프로그램이 완전히 끝날 때 딱 한 번 닫기
         pygame.mixer.quit()
 
 if __name__ == "__main__":
