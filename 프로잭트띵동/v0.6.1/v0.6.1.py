@@ -10,7 +10,7 @@ MAX_HISTORY_LEN = 6
 class CognitionCounselorAI:
     def __init__(self):
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.model_name = "llama-3.1-8b-instant"
+        self.model_name = "openai/gpt-oss-120b"
         
         self.api_key_file = os.path.join(self.base_dir, "apikey")
         self.profile_file = os.path.join(self.base_dir, "my_profile.json")
