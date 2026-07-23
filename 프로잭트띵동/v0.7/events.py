@@ -1,0 +1,7 @@
+from enum import Enum
+
+class Event(Enum):
+    USER_DETECTED = "USER_DETECTED"
+    SESSION_START = "SESSION_START"
+    SESSION_END = "SESSION_END"
+    SAVE_MEMORY = "SAVE_MEMORY"
